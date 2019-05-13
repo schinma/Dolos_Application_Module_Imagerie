@@ -26,11 +26,10 @@ public class ModuleTest {
         capture.read(frame);
         
         FramePacket packet = new FramePacket(frame, "label");
-        Imgcodecs.imwrite("test.jpg", packet.getFrame()); 
-        System.out.println(packet.serialize());
+        Imgcodecs.imwrite("test.png", packet.getFrame());
         FramePacket newPacket = new FramePacket(packet.serialize());
         
-        Imgcodecs.imwrite("test2.jpg", newPacket.getFrame());
+        Imgcodecs.imwrite("test2.png", newPacket.getFrame());
         System.out.println("Label : " + newPacket.getLabel());
     } 
     

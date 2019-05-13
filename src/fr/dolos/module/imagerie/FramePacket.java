@@ -1,7 +1,5 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Frame Packet class for Imagerie Module 
  */
 package fr.dolos.module.imagerie;
 
@@ -53,7 +51,7 @@ public class FramePacket implements Packet, PacketDeserializer {
     public String serialize() {
         
         MatOfByte matOfByte = new MatOfByte();
-        Imgcodecs.imencode(".jpg", frame, matOfByte);
+        Imgcodecs.imencode(".png", frame, matOfByte);
         byte[] byteArray = matOfByte.toArray();
         String encodedString = Base64.getEncoder().encodeToString(byteArray);  
         return label + "," + encodedString;
