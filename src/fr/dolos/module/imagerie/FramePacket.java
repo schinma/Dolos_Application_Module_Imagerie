@@ -21,25 +21,20 @@ public class FramePacket implements Packet, PacketDeserializer {
     public static final String PACKET_NAME = "Frame_Packet";
     
     private Mat frame;
-    private String label;
     
     public FramePacket(){
         
     }
     
-    public FramePacket(Mat frame, String label) {
+    public FramePacket(Mat frame) {
        this.frame = frame;
-       this.label = label;
     }
     
     public FramePacket(String data){
-              
-       String tokens[] = data.split(",");
-       this.label = tokens[0];
-       byte[] decodedBytes = Base64.getDecoder().decode(tokens[1]);
+       byte[] decodedBytes = Base64.getDecoder().decode(data);
        Mat encoded = new Mat(1, decodedBytes.length, CvType.CV_8U);
        encoded.put(0, 0, decodedBytes);
-       frame = Imgcodecs.imdecode(encoded,CvType.CV_8U);
+       this.frame = Imgcodecs.imdecode(encoded, Imgcodecs.IMREAD_COLOR);
     }
     
     @Override
@@ -52,17 +47,13 @@ public class FramePacket implements Packet, PacketDeserializer {
         
         MatOfByte matOfByte = new MatOfByte();
         Imgcodecs.imencode(".png", frame, matOfByte);
-        byte[] byteArray = matOfByte.toArray();
+        byte[] byteArray = matOfByte.toArray();      
         String encodedString = Base64.getEncoder().encodeToString(byteArray);  
-        return label + "," + encodedString;
+        return encodedString;
     }
     
     public Mat getFrame() {
         return frame;
-    }
-    
-    public String getLabel() {
-        return label;
     }
     
     @Override

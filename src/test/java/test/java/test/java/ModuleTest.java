@@ -6,6 +6,7 @@
 package test.java.test.java.test.java;
 
 import fr.dolos.module.imagerie.FramePacket;
+import fr.dolos.module.imagerie.LabeledFramePacket;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.videoio.VideoCapture;
@@ -25,12 +26,11 @@ public class ModuleTest {
         Mat frame = new Mat(); 
         capture.read(frame);
         
-        FramePacket packet = new FramePacket(frame, "label");
+        LabeledFramePacket packet = new LabeledFramePacket(frame, "label");
         Imgcodecs.imwrite("test.png", packet.getFrame());
-        FramePacket newPacket = new FramePacket(packet.serialize());
+        LabeledFramePacket newPacket = new LabeledFramePacket(packet.serialize());
         
         Imgcodecs.imwrite("test2.png", newPacket.getFrame());
         System.out.println("Label : " + newPacket.getLabel());
-    } 
-    
+    }     
 }

@@ -25,6 +25,7 @@ public class ImagerieModule extends UserModule {
     private boolean register = false;
     private Mat lastFrameReceived = null;
     private PacketDeserializer deserializer = new FramePacket();
+    private PacketDeserializer labelDeserializer = new LabeledFramePacket();
     private int imgCount = 0;
     
     @Override
@@ -53,7 +54,7 @@ public class ImagerieModule extends UserModule {
     }
     
     @PacketHandler
-    public void onPacketReceived(FramePacket framePacket, NetworkClient client) {
+    public void onPacketReceived(LabeledFramePacket framePacket, NetworkClient client) {
         
         log("Packet received : " + framePacket.getName());
         log("Packet label : " + framePacket.getLabel());
@@ -64,6 +65,8 @@ public class ImagerieModule extends UserModule {
     
     private void register() {      
       //System.loadLibrary(org.opencv.core.Core.NATIVE_LIBRARY_NAME);
+      log("register deserializer " + LabeledFramePacket.PACKET_NAME);
+      core.getNetworkManager().registerDeserializer(LabeledFramePacket.PACKET_NAME, labelDeserializer); 
       log("register deserializer " + FramePacket.PACKET_NAME);
       core.getNetworkManager().registerDeserializer(FramePacket.PACKET_NAME, deserializer);
       core.getNetworkManager().registerReceiver(this);
