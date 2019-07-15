@@ -58,7 +58,7 @@ public class FramePacket implements Packet, PacketDeserializer {
     
     @Override
     public Packet deserialize(String packet, String data) {
-        
+     
        if (packet.equals(PACKET_NAME)) {
            Packet newPacket = new FramePacket(data);
            return newPacket;

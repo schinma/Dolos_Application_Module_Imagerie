@@ -1,10 +1,9 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Labeled Frame Packet class for Imagerie Module 
  */
 package fr.dolos.module.imagerie;
 
+import fr.dolos.sdk.network.Packet;
 import org.opencv.core.Mat;
 
 /**
@@ -17,8 +16,7 @@ public class LabeledFramePacket extends FramePacket {
         
     public String label;
     
-    public LabeledFramePacket() {        
-    }
+    public LabeledFramePacket() {}
     
     public LabeledFramePacket(Mat frame, String label) {
         super(frame);
@@ -42,5 +40,17 @@ public class LabeledFramePacket extends FramePacket {
     @Override
     public String serialize() {
         return label + "," + super.serialize();
+    }
+    
+    @Override
+    public Packet deserialize(String packet, String data){
+        
+        if (packet.equals(PACKET_NAME)) {
+           Packet newPacket = new LabeledFramePacket(data);
+           return newPacket;
+       } else {
+           System.out.println("Wrong type of packet : expected " + PACKET_NAME + " and got " + packet);
+           return null;
+       }
     }
 }
