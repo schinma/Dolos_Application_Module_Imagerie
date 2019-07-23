@@ -4,6 +4,7 @@
 package fr.dolos.module.imagerie;
 
 import fr.dolos.sdk.Core;
+import fr.dolos.sdk.commands.CommandHandler;
 import fr.dolos.sdk.modules.UserModule;
 import fr.dolos.sdk.network.NetworkClient;
 import fr.dolos.sdk.network.Packet;
@@ -27,7 +28,7 @@ import org.opencv.imgcodecs.Imgcodecs;
  *
  * @author schindler
  */
-public class ImagerieModule extends UserModule {
+public class ImagerieModule extends UserModule implements CommandHandler {
 
     private static final String MODULE_NAME = "Dolos_Imagerie";
     
@@ -36,6 +37,7 @@ public class ImagerieModule extends UserModule {
     private Mat lastFrameReceived = null;
     private int imgCount = 0;
     
+    private NetworkClient client = null;
     private boolean viewLive = false;
     private boolean openWindow = false;
     private boolean imageryStarted = false;
@@ -104,6 +106,8 @@ public class ImagerieModule extends UserModule {
     {
         this.imageryStarted = infoPacket.getStarted();
         this.labels = infoPacket.getLabels();
+        this.client = client;
+        
         log("Available labels : " + labels.toString());
         
         if (!imageryStarted) {
@@ -119,7 +123,8 @@ public class ImagerieModule extends UserModule {
     }
     
     private void register()
-    {      
+    {
+        // register the module's packets
       //System.loadLibrary(org.opencv.core.Core.NATIVE_LIBRARY_NAME);
       log("register deserializer " + LabeledFramePacket.PACKET_NAME);
       //core.getNetworkManager().registerDeserializer(LabeledFramePacket.PACKET_NAME, labelDeserializer); 
@@ -132,7 +137,13 @@ public class ImagerieModule extends UserModule {
       log("register deserializer " + ImageryInfosPacket.PACKET_NAME);
       //core.getNetworkManager().registerDeserializer(ImageryInfosPacket.PACKET_NAME, infoDeserializer);
       core.getNetworkManager().registerDeserializer(ImageryInfosPacket.PACKET_NAME, packetDeserializers.get(ImageryInfosPacket.PACKET_NAME)); 
-          
+      
+      // register the module's commands
+      core.getCommandManager().registerHandler(ImageryCommands.START_IMAGERY.label, this);
+      core.getCommandManager().registerHandler(ImageryCommands.STOP_IMAGERY.label, this);
+      core.getCommandManager().registerHandler(ImageryCommands.START_LIVE.label, this);
+      core.getCommandManager().registerHandler(ImageryCommands.STOP_LIVE.label, this);
+      
       core.getNetworkManager().registerReceiver(this);
     }
 
@@ -154,5 +165,69 @@ public class ImagerieModule extends UserModule {
         frame.get(0, 0, data);
       
         return image;
+    }
+
+    @Override
+    public void onCommand(String label, String[] args) {
+         if (client == null) {
+                log("Need to connect to a client");
+                return;
+        }
+        if (label.equals(ImageryCommands.START_IMAGERY.label)) {
+            if (imageryStarted) {
+                log("Imagery already started");
+                return;
+            }
+            try {
+                client.send(new ControlImageryPacket(true));
+                imageryStarted = true;
+                log("Starting imagery");
+            } catch (IOException ex) {
+                ex.printStackTrace(System.err);
+                log("Unable to send start_imagery comman");
+            }
+        }
+        else if (label.equals(ImageryCommands.STOP_IMAGERY.label)) {
+            if (!imageryStarted) {
+                log("Imagery already stopped");
+                return;
+            }
+            try {
+                client.send(new ControlImageryPacket(false));
+                imageryStarted = false;
+                log("Stopping imagery");
+            } catch (IOException ex) {
+                ex.printStackTrace(System.err);
+                log("Unable to send stop_imagery command");
+            }
+        }
+        else if (label.equals(ImageryCommands.START_LIVE.label)) {
+           if (viewLive) {
+                log("Live already started");
+                return;
+            }
+            try {
+                client.send(new ViewLiveControlPacket(true));
+                viewLive = true;
+                log("Starting imagery");
+            } catch (IOException ex) {
+                ex.printStackTrace(System.err);
+                log("Unable to send start_imagery comman");
+            }
+        }
+        else if (label.equals(ImageryCommands.STOP_LIVE.label)) {
+            if (!viewLive) {
+                log("Live already stopped");
+                return;
+            }
+            try {
+                client.send(new ViewLiveControlPacket(false));
+                viewLive = false;
+                log("Starting imagery");
+            } catch (IOException ex) {
+                ex.printStackTrace(System.err);
+                log("Unable to send start_imagery comman");
+            }
+        }        
     }
 }
