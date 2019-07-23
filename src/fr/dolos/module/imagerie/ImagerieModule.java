@@ -6,11 +6,19 @@ package fr.dolos.module.imagerie;
 import fr.dolos.sdk.Core;
 import fr.dolos.sdk.modules.UserModule;
 import fr.dolos.sdk.network.NetworkClient;
+import fr.dolos.sdk.network.Packet;
 import fr.dolos.sdk.network.PacketDeserializer;
 import fr.dolos.sdk.network.PacketHandler;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 
@@ -30,9 +38,21 @@ public class ImagerieModule extends UserModule {
     
     private boolean viewLive = false;
     private boolean openWindow = false;
+    private boolean imageryStarted = false;
+    private List<String> labels = null;
     
-    private PacketDeserializer deserializer = new FramePacket();
+    /*private PacketDeserializer deserializer = new FramePacket();
     private PacketDeserializer labelDeserializer = new LabeledFramePacket();
+    private PacketDeserializer infoDeserializer = new ImageryInfosPacket();*/
+    private Map<String, PacketDeserializer> packetDeserializers;
+    
+    public ImagerieModule()
+    {
+        packetDeserializers = new HashMap<>();
+        packetDeserializers.put(FramePacket.PACKET_NAME, new FramePacket());
+        packetDeserializers.put(LabeledFramePacket.PACKET_NAME, new LabeledFramePacket());
+        packetDeserializers.put(ImageryInfosPacket.PACKET_NAME, new ImageryInfosPacket());
+    }
     
     @Override
     public boolean load(Core core) {
@@ -46,7 +66,8 @@ public class ImagerieModule extends UserModule {
     }
     
     @Override
-    public void update() {
+    public void update()
+    {
 
         if (!register){
             this.register();
@@ -55,13 +76,14 @@ public class ImagerieModule extends UserModule {
     }
 
     @Override
-    public String getName() {
+    public String getName()
+    {
        return MODULE_NAME;
     }
     
     @PacketHandler
-    public void onPacketReceived(LabeledFramePacket framePacket, NetworkClient client) {
-        
+    public void onPacketReceived(LabeledFramePacket framePacket, NetworkClient client)
+    {        
         log("Packet received : " + framePacket.getName());
         log("Packet label : " + framePacket.getLabel());
         lastFrameReceived = framePacket.getFrame();
@@ -77,14 +99,40 @@ public class ImagerieModule extends UserModule {
         // Afficher l'image 
     }
     
-    private void register() {      
+    @PacketHandler
+    public void onPacketReceived(ImageryInfosPacket infoPacket, NetworkClient client)
+    {
+        this.imageryStarted = infoPacket.getStarted();
+        this.labels = infoPacket.getLabels();
+        log("Available labels : " + labels.toString());
+        
+        if (!imageryStarted) {
+            Packet controlPacket = new ControlImageryPacket(true);
+            Packet livePacket = new ViewLiveControlPacket(true);
+            try {
+                client.send(controlPacket);
+                client.send(livePacket);
+            } catch (IOException ex) {
+                Logger.getLogger(ImagerieModule.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
+    private void register()
+    {      
       //System.loadLibrary(org.opencv.core.Core.NATIVE_LIBRARY_NAME);
       log("register deserializer " + LabeledFramePacket.PACKET_NAME);
-      core.getNetworkManager().registerDeserializer(LabeledFramePacket.PACKET_NAME, labelDeserializer); 
-      
+      //core.getNetworkManager().registerDeserializer(LabeledFramePacket.PACKET_NAME, labelDeserializer); 
+      core.getNetworkManager().registerDeserializer(LabeledFramePacket.PACKET_NAME, packetDeserializers.get(LabeledFramePacket.PACKET_NAME)); 
+       
       log("register deserializer " + FramePacket.PACKET_NAME);
-      core.getNetworkManager().registerDeserializer(FramePacket.PACKET_NAME, deserializer);
+      //core.getNetworkManager().registerDeserializer(FramePacket.PACKET_NAME, deserializer);
+      core.getNetworkManager().registerDeserializer(FramePacket.PACKET_NAME, packetDeserializers.get(FramePacket.PACKET_NAME)); 
       
+      log("register deserializer " + ImageryInfosPacket.PACKET_NAME);
+      //core.getNetworkManager().registerDeserializer(ImageryInfosPacket.PACKET_NAME, infoDeserializer);
+      core.getNetworkManager().registerDeserializer(ImageryInfosPacket.PACKET_NAME, packetDeserializers.get(ImageryInfosPacket.PACKET_NAME)); 
+          
       core.getNetworkManager().registerReceiver(this);
     }
 

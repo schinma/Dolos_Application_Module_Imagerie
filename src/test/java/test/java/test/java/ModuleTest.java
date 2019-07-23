@@ -6,7 +6,9 @@
 package test.java.test.java.test.java;
 
 import fr.dolos.module.imagerie.FramePacket;
+import fr.dolos.module.imagerie.ImageryInfosPacket;
 import fr.dolos.module.imagerie.LabeledFramePacket;
+import java.util.ArrayList;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.videoio.VideoCapture;
@@ -32,5 +34,16 @@ public class ModuleTest {
         
         Imgcodecs.imwrite("test2.png", newPacket.getFrame());
         System.out.println("Label : " + newPacket.getLabel());
+        
+        ArrayList<String> labels = new ArrayList<String>();
+        labels.add("dog");
+        labels.add("cat");
+        labels.add("cow");
+        
+       ImageryInfosPacket infoPacket = new ImageryInfosPacket(true, labels);
+       ImageryInfosPacket newInfo = new ImageryInfosPacket(infoPacket.serialize());
+       
+       System.out.println("newInfo started :" + newInfo.getStarted());
+       System.out.println("newInfo labels :" + newInfo.getLabels().toString());       
     }     
 }
