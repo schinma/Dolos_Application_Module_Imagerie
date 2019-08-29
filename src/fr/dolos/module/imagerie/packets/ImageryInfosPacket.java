@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package fr.dolos.module.imagerie;
+package fr.dolos.module.imagerie.packets;
 
 import fr.dolos.sdk.network.Packet;
 import fr.dolos.sdk.network.PacketDeserializer;
@@ -13,23 +13,16 @@ import java.util.ArrayList;
  *
  * @author schin
  */
-public class ImageryInfosPacket implements Packet, PacketDeserializer {
+public class ImageryInfosPacket extends JsonPacket implements PacketDeserializer {
 
     public static final String PACKET_NAME = "Imagery_Infos_Packet";
     
     private boolean imageryStarted;
     private ArrayList<String> imageryLabels;
     
-    public ImageryInfosPacket() {}
+    public ImageryInfosPacket() {}            
     
-    public ImageryInfosPacket(boolean started, ArrayList<String> labels)
-    {
-        this.imageryStarted = started;
-        this.imageryLabels = labels;
-    }
-    
-    public ImageryInfosPacket(String data)
-    {
+    public ImageryInfosPacket(String data) {
         String datas[] = data.split(";");
         imageryLabels = new ArrayList<>();
         
@@ -40,31 +33,23 @@ public class ImageryInfosPacket implements Packet, PacketDeserializer {
         }
     }
     
-    public boolean getStarted()
-    {
+    public boolean getStarted() {
         return this.imageryStarted;
     }
     
-    public ArrayList<String> getLabels()
-    {
+    public ArrayList<String> getLabels() {
         return this.imageryLabels;
     }
     
     @Override
-    public String getName()
-    {
+    public String getName() {
         return PACKET_NAME;
     }
-
-    @Override
-    public String serialize() 
-    {   
-        String msg = Boolean.toString(imageryStarted) + ";";
-        for (String label : imageryLabels) {
-            msg+=label + ',';
-        }      
-        return msg;
-    }
+    
+    @Override //JsonPacket
+    public void serializeData() {
+        
+    }  
 
     @Override
     public Packet deserialize(String packet, String data) {
@@ -76,5 +61,4 @@ public class ImageryInfosPacket implements Packet, PacketDeserializer {
            return null;
        }
     }
-    
 }

@@ -3,11 +3,15 @@
  */
 package fr.dolos.module.imagerie;
 
+import fr.dolos.module.imagerie.packets.ViewLiveControlPacket;
+import fr.dolos.module.imagerie.packets.LabeledFramePacket;
+import fr.dolos.module.imagerie.packets.ControlImageryPacket;
+import fr.dolos.module.imagerie.packets.ImageryInfosPacket;
+import fr.dolos.module.imagerie.packets.FramePacket;
 import fr.dolos.sdk.Core;
 import fr.dolos.sdk.commands.CommandHandler;
 import fr.dolos.sdk.modules.UserModule;
 import fr.dolos.sdk.network.NetworkClient;
-import fr.dolos.sdk.network.Packet;
 import fr.dolos.sdk.network.PacketDeserializer;
 import fr.dolos.sdk.network.PacketHandler;
 import java.awt.image.BufferedImage;
@@ -18,8 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 
@@ -33,24 +35,21 @@ public class ImagerieModule extends UserModule implements CommandHandler {
     private static final String MODULE_NAME = "Dolos_Imagerie";
     
     private Core core = null;
-    private boolean register = false;
     private Mat lastFrameReceived = null;
     private int imgCount = 0;
     
     private NetworkClient client = null;
     private boolean viewLive = false;
-    private boolean openWindow = false;
     private boolean imageryStarted = false;
-    private List<String> labels = null;
+    private List<String> availableLlabels = null;
+    private List<String> selectedLabels = null;
     
-    /*private PacketDeserializer deserializer = new FramePacket();
-    private PacketDeserializer labelDeserializer = new LabeledFramePacket();
-    private PacketDeserializer infoDeserializer = new ImageryInfosPacket();*/
     private Map<String, PacketDeserializer> packetDeserializers;
     
     public ImagerieModule()
     {
-        packetDeserializers = new HashMap<>();
+        selectedLabels = new ArrayList<>();
+        packetDeserializers = new HashMap<>();        
         packetDeserializers.put(FramePacket.PACKET_NAME, new FramePacket());
         packetDeserializers.put(LabeledFramePacket.PACKET_NAME, new LabeledFramePacket());
         packetDeserializers.put(ImageryInfosPacket.PACKET_NAME, new ImageryInfosPacket());
@@ -58,7 +57,24 @@ public class ImagerieModule extends UserModule implements CommandHandler {
     
     @Override
     public boolean load(Core core) {
-        this.core = core;     
+        this.core = core;
+               
+        // register the module's packet deserializers
+        log("register deserializer " + LabeledFramePacket.PACKET_NAME);
+        core.getNetworkManager().registerDeserializer(LabeledFramePacket.PACKET_NAME, packetDeserializers.get(LabeledFramePacket.PACKET_NAME));    
+        log("register deserializer " + FramePacket.PACKET_NAME);
+        core.getNetworkManager().registerDeserializer(FramePacket.PACKET_NAME, packetDeserializers.get(FramePacket.PACKET_NAME));       
+        log("register deserializer " + ImageryInfosPacket.PACKET_NAME);
+        core.getNetworkManager().registerDeserializer(ImageryInfosPacket.PACKET_NAME, packetDeserializers.get(ImageryInfosPacket.PACKET_NAME)); 
+      
+        // register the module's commands
+        core.getCommandManager().registerHandler(ImageryCommands.START_IMAGERY.label, this);
+        core.getCommandManager().registerHandler(ImageryCommands.STOP_IMAGERY.label, this);
+        core.getCommandManager().registerHandler(ImageryCommands.START_LIVE.label, this);
+        core.getCommandManager().registerHandler(ImageryCommands.STOP_LIVE.label, this);
+      
+        core.getNetworkManager().registerReceiver(this);
+            
         return true;
     }
 
@@ -70,11 +86,6 @@ public class ImagerieModule extends UserModule implements CommandHandler {
     @Override
     public void update()
     {
-
-        if (!register){
-            this.register();
-            register = true;
-        }
     }
 
     @Override
@@ -105,46 +116,10 @@ public class ImagerieModule extends UserModule implements CommandHandler {
     public void onPacketReceived(ImageryInfosPacket infoPacket, NetworkClient client)
     {
         this.imageryStarted = infoPacket.getStarted();
-        this.labels = infoPacket.getLabels();
+        this.availableLlabels = infoPacket.getLabels();
         this.client = client;
         
-        log("Available labels : " + labels.toString());
-        
-        if (!imageryStarted) {
-            Packet controlPacket = new ControlImageryPacket(true);
-            Packet livePacket = new ViewLiveControlPacket(true);
-            try {
-                client.send(controlPacket);
-                client.send(livePacket);
-            } catch (IOException ex) {
-                Logger.getLogger(ImagerieModule.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-    }
-    
-    private void register()
-    {
-        // register the module's packets
-      //System.loadLibrary(org.opencv.core.Core.NATIVE_LIBRARY_NAME);
-      log("register deserializer " + LabeledFramePacket.PACKET_NAME);
-      //core.getNetworkManager().registerDeserializer(LabeledFramePacket.PACKET_NAME, labelDeserializer); 
-      core.getNetworkManager().registerDeserializer(LabeledFramePacket.PACKET_NAME, packetDeserializers.get(LabeledFramePacket.PACKET_NAME)); 
-       
-      log("register deserializer " + FramePacket.PACKET_NAME);
-      //core.getNetworkManager().registerDeserializer(FramePacket.PACKET_NAME, deserializer);
-      core.getNetworkManager().registerDeserializer(FramePacket.PACKET_NAME, packetDeserializers.get(FramePacket.PACKET_NAME)); 
-      
-      log("register deserializer " + ImageryInfosPacket.PACKET_NAME);
-      //core.getNetworkManager().registerDeserializer(ImageryInfosPacket.PACKET_NAME, infoDeserializer);
-      core.getNetworkManager().registerDeserializer(ImageryInfosPacket.PACKET_NAME, packetDeserializers.get(ImageryInfosPacket.PACKET_NAME)); 
-      
-      // register the module's commands
-      core.getCommandManager().registerHandler(ImageryCommands.START_IMAGERY.label, this);
-      core.getCommandManager().registerHandler(ImageryCommands.STOP_IMAGERY.label, this);
-      core.getCommandManager().registerHandler(ImageryCommands.START_LIVE.label, this);
-      core.getCommandManager().registerHandler(ImageryCommands.STOP_LIVE.label, this);
-      
-      core.getNetworkManager().registerReceiver(this);
+        log("Available labels : " + availableLlabels.toString());
     }
 
     private void log(String msg) {
@@ -169,23 +144,23 @@ public class ImagerieModule extends UserModule implements CommandHandler {
 
     @Override
     public void onCommand(String label, String[] args) {
-         if (client == null) {
-                log("Need to connect to a client");
+        if (client == null) {
+                log(label + " : Need to connect to a client");
                 return;
         }
         if (label.equals(ImageryCommands.START_IMAGERY.label)) {
             if (imageryStarted) {
-                log("Imagery already started");
+                log(label + " : Imagery already started");
                 return;
             }
             try {
                 client.send(new ControlImageryPacket(true));
                 imageryStarted = true;
-                log("Starting imagery");
+                log(label + " : Starting imagery");
             } catch (IOException ex) {
                 ex.printStackTrace(System.err);
-                log("Unable to send start_imagery comman");
-            }
+                log("Unable to send start_imagery command");
+            }           
         }
         else if (label.equals(ImageryCommands.STOP_IMAGERY.label)) {
             if (!imageryStarted) {
@@ -195,7 +170,7 @@ public class ImagerieModule extends UserModule implements CommandHandler {
             try {
                 client.send(new ControlImageryPacket(false));
                 imageryStarted = false;
-                log("Stopping imagery");
+                log(label + " : Stopping imagery");
             } catch (IOException ex) {
                 ex.printStackTrace(System.err);
                 log("Unable to send stop_imagery command");
@@ -203,21 +178,21 @@ public class ImagerieModule extends UserModule implements CommandHandler {
         }
         else if (label.equals(ImageryCommands.START_LIVE.label)) {
            if (viewLive) {
-                log("Live already started");
+                log(label + " : Live already started");
                 return;
             }
             try {
                 client.send(new ViewLiveControlPacket(true));
                 viewLive = true;
-                log("Starting imagery");
+                log(label + " : Starting imagery");
             } catch (IOException ex) {
                 ex.printStackTrace(System.err);
-                log("Unable to send start_imagery comman");
+                log("Unable to send start_imagery command");
             }
         }
-        else if (label.equals(ImageryCommands.STOP_LIVE.label)) {
+        else if (label.equals(ImageryCommands.STOP_LIVE)) {
             if (!viewLive) {
-                log("Live already stopped");
+                log(label + " : live already stopped");
                 return;
             }
             try {
@@ -226,8 +201,26 @@ public class ImagerieModule extends UserModule implements CommandHandler {
                 log("Starting imagery");
             } catch (IOException ex) {
                 ex.printStackTrace(System.err);
-                log("Unable to send start_imagery comman");
+                log("Unable to send start_imagery command");
             }
-        }        
+        }
+        else if (label.equals(ImageryCommands.LABELS)) {
+            if (availableLlabels == null || availableLlabels.size() == 0) {
+                log(label + " : no labels available");
+                return;
+            }            
+            log("Available labels : " + availableLlabels.toString());
+        }
+        else if (label.equals(ImageryCommands.SEND_LABELS)) {
+            if (args.length < 2 ) {
+                log(ImageryCommands.SEND_LABELS + " : need at least 2 arguments : send label_1 label_2 ..");
+                return;
+            }
+            // envoyer les availableLlabels
+            selectedLabels.clear();
+            for (int i = 1; i < args.length; i++) {
+                selectedLabels.add(args[i]);
+            }
+        }
     }
 }

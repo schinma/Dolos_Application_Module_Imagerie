@@ -1,8 +1,9 @@
 /*
  * Labeled Frame Packet class for Imagerie Module 
  */
-package fr.dolos.module.imagerie;
+package fr.dolos.module.imagerie.packets;
 
+import fr.dolos.module.imagerie.packets.FramePacket;
 import fr.dolos.sdk.network.Packet;
 import org.opencv.core.Mat;
 

@@ -14,7 +14,9 @@ public enum ImageryCommands {
     START_IMAGERY("start_img"),
     STOP_IMAGERY("stop_img"),
     START_LIVE("start_live"),
-    STOP_LIVE("stop_live");
+    STOP_LIVE("stop_live"),
+    LABELS("labels"),
+    SEND_LABELS("send");
     
     public final String label;
     

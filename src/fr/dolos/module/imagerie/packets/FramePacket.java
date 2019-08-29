@@ -1,7 +1,7 @@
 /*
  * Frame Packet class for Imagerie Module 
  */
-package fr.dolos.module.imagerie;
+package fr.dolos.module.imagerie.packets;
 
 import fr.dolos.sdk.network.Packet;
 import fr.dolos.sdk.network.PacketDeserializer;
@@ -10,7 +10,6 @@ import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.core.CvType;
 import org.opencv.core.MatOfByte;
-
 
 /**
  *

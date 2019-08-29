@@ -5,9 +5,9 @@
  */
 package test.java.test.java.test.java;
 
-import fr.dolos.module.imagerie.FramePacket;
-import fr.dolos.module.imagerie.ImageryInfosPacket;
-import fr.dolos.module.imagerie.LabeledFramePacket;
+import fr.dolos.module.imagerie.packets.FramePacket;
+import fr.dolos.module.imagerie.packets.ImageryInfosPacket;
+import fr.dolos.module.imagerie.packets.LabeledFramePacket;
 import java.util.ArrayList;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
@@ -39,11 +39,6 @@ public class ModuleTest {
         labels.add("dog");
         labels.add("cat");
         labels.add("cow");
-        
-       ImageryInfosPacket infoPacket = new ImageryInfosPacket(true, labels);
-       ImageryInfosPacket newInfo = new ImageryInfosPacket(infoPacket.serialize());
-       
-       System.out.println("newInfo started :" + newInfo.getStarted());
-       System.out.println("newInfo labels :" + newInfo.getLabels().toString());       
+         
     }     
 }
