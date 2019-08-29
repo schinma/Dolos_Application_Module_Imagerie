@@ -5,6 +5,8 @@
  */
 package fr.dolos.module.imagerie.packets;
 
+import org.json.simple.JSONObject;
+
 /**
  *
  * @author schin
@@ -12,6 +14,7 @@ package fr.dolos.module.imagerie.packets;
 public abstract class ControlPacket extends JsonPacket {
     
     public boolean enable;
+    private String key = "status";
     
     ControlPacket() {
         this.enable = false;
@@ -20,9 +23,14 @@ public abstract class ControlPacket extends JsonPacket {
     ControlPacket(boolean enable) {
         this.enable = enable;
     }
+    
+    ControlPacket(String data) {
+        JSONObject obj = this.deserializeData(data);
+        this.enable = (Boolean) obj.get(key);
+    }
 
     @Override
-    public void serializeData() {
-     
+    public void serializeData(JSONObject object) {     
+        object.put(key, this.enable);
     }
 }

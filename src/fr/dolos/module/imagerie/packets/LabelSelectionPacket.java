@@ -6,6 +6,8 @@
 package fr.dolos.module.imagerie.packets;
 
 import java.util.ArrayList;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 /**
  *
@@ -17,7 +19,7 @@ public class LabelSelectionPacket extends JsonPacket{
     
     private ArrayList<String> labels;
     
-    LabelSelectionPacket(ArrayList<String> labels) {
+    public LabelSelectionPacket(ArrayList<String> labels) {
         this.labels = labels;
     }
 
@@ -27,7 +29,8 @@ public class LabelSelectionPacket extends JsonPacket{
     }
 
     @Override
-    public void serializeData() {
+    public void serializeData(JSONObject object) {
         
+        object.put("labels", labels);
     }
 }

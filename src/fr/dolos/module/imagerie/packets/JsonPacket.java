@@ -6,7 +6,13 @@
 package fr.dolos.module.imagerie.packets;
 
 import fr.dolos.sdk.network.Packet;
-import fr.dolos.sdk.network.PacketDeserializer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.parser.ParseException;
+import org.json.simple.parser.JSONParser;
 
 /**
  *
@@ -16,8 +22,25 @@ public abstract class JsonPacket implements Packet {
 
     @Override
     public String serialize() {
-        return "serialize with json :p";
+        
+        JSONObject object = new JSONObject();        
+        this.serializeData(object);        
+        
+        return object.toJSONString();
     }
     
-    public abstract void serializeData();
+    public abstract void serializeData(JSONObject object);
+    
+    protected JSONObject deserializeData(String data) {       
+        
+        JSONParser parser = new JSONParser();        
+        JSONObject object;
+        try {
+            object = (JSONObject) parser.parse(data);
+            return object;
+        } catch (ParseException ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
 }

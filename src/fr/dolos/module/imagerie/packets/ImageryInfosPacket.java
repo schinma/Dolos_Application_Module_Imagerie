@@ -8,6 +8,8 @@ package fr.dolos.module.imagerie.packets;
 import fr.dolos.sdk.network.Packet;
 import fr.dolos.sdk.network.PacketDeserializer;
 import java.util.ArrayList;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 /**
  *
@@ -18,19 +20,20 @@ public class ImageryInfosPacket extends JsonPacket implements PacketDeserializer
     public static final String PACKET_NAME = "Imagery_Infos_Packet";
     
     private boolean imageryStarted;
-    private ArrayList<String> imageryLabels;
+    private ArrayList<String> imageryLabels = new ArrayList<>();
     
-    public ImageryInfosPacket() {}            
+    public ImageryInfosPacket() {}
+    
+    public ImageryInfosPacket(ArrayList<String> labels, boolean status) {
+        this.imageryLabels = labels;
+        this.imageryStarted = status;
+    }
     
     public ImageryInfosPacket(String data) {
-        String datas[] = data.split(";");
-        imageryLabels = new ArrayList<>();
+        JSONObject obj = this.deserializeData(data);
         
-        this.imageryStarted = Boolean.parseBoolean(datas[0]);
-        String labels[] = datas[1].split(",");
-        for (String label : labels) {
-            this.imageryLabels.add(label);
-        }
+        this.imageryStarted = (Boolean) obj.get("status");
+        this.imageryLabels = (JSONArray) obj.get("labels");
     }
     
     public boolean getStarted() {
@@ -47,8 +50,10 @@ public class ImageryInfosPacket extends JsonPacket implements PacketDeserializer
     }
     
     @Override //JsonPacket
-    public void serializeData() {
+    public void serializeData(JSONObject object) {
         
+        object.put("labels", imageryLabels);
+        object.put("status", this.imageryStarted);
     }  
 
     @Override

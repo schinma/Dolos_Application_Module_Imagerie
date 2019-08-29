@@ -8,6 +8,7 @@ import fr.dolos.module.imagerie.packets.LabeledFramePacket;
 import fr.dolos.module.imagerie.packets.ControlImageryPacket;
 import fr.dolos.module.imagerie.packets.ImageryInfosPacket;
 import fr.dolos.module.imagerie.packets.FramePacket;
+import fr.dolos.module.imagerie.packets.LabelSelectionPacket;
 import fr.dolos.sdk.Core;
 import fr.dolos.sdk.commands.CommandHandler;
 import fr.dolos.sdk.modules.UserModule;
@@ -41,18 +42,19 @@ public class ImagerieModule extends UserModule implements CommandHandler {
     private NetworkClient client = null;
     private boolean viewLive = false;
     private boolean imageryStarted = false;
-    private List<String> availableLlabels = null;
-    private List<String> selectedLabels = null;
+    private ArrayList<String> availableLabels = null;
+    private ArrayList<String> selectedLabels = null;
     
     private Map<String, PacketDeserializer> packetDeserializers;
     
-    public ImagerieModule()
-    {
+    public ImagerieModule() {
         selectedLabels = new ArrayList<>();
         packetDeserializers = new HashMap<>();        
         packetDeserializers.put(FramePacket.PACKET_NAME, new FramePacket());
         packetDeserializers.put(LabeledFramePacket.PACKET_NAME, new LabeledFramePacket());
         packetDeserializers.put(ImageryInfosPacket.PACKET_NAME, new ImageryInfosPacket());
+        packetDeserializers.put(ControlImageryPacket.PACKET_NAME, new ControlImageryPacket());        
+        packetDeserializers.put(ViewLiveControlPacket.PACKET_NAME, new ViewLiveControlPacket());
     }
     
     @Override
@@ -116,10 +118,10 @@ public class ImagerieModule extends UserModule implements CommandHandler {
     public void onPacketReceived(ImageryInfosPacket infoPacket, NetworkClient client)
     {
         this.imageryStarted = infoPacket.getStarted();
-        this.availableLlabels = infoPacket.getLabels();
+        this.availableLabels = infoPacket.getLabels();
         this.client = client;
         
-        log("Available labels : " + availableLlabels.toString());
+        log("Available labels : " + availableLabels.toString());
     }
 
     private void log(String msg) {
@@ -145,7 +147,7 @@ public class ImagerieModule extends UserModule implements CommandHandler {
     @Override
     public void onCommand(String label, String[] args) {
         if (client == null) {
-                log(label + " : Need to connect to a client");
+                log(label + " : Need to connect to a drone");
                 return;
         }
         if (label.equals(ImageryCommands.START_IMAGERY.label)) {
@@ -159,7 +161,7 @@ public class ImagerieModule extends UserModule implements CommandHandler {
                 log(label + " : Starting imagery");
             } catch (IOException ex) {
                 ex.printStackTrace(System.err);
-                log("Unable to send start_imagery command");
+                log("Unable to send '" + label + "' command");
             }           
         }
         else if (label.equals(ImageryCommands.STOP_IMAGERY.label)) {
@@ -173,7 +175,7 @@ public class ImagerieModule extends UserModule implements CommandHandler {
                 log(label + " : Stopping imagery");
             } catch (IOException ex) {
                 ex.printStackTrace(System.err);
-                log("Unable to send stop_imagery command");
+                log("Unable to send '" + label + "' command");
             }
         }
         else if (label.equals(ImageryCommands.START_LIVE.label)) {
@@ -187,7 +189,7 @@ public class ImagerieModule extends UserModule implements CommandHandler {
                 log(label + " : Starting imagery");
             } catch (IOException ex) {
                 ex.printStackTrace(System.err);
-                log("Unable to send start_imagery command");
+                log("Unable to send '" + label + "' command");
             }
         }
         else if (label.equals(ImageryCommands.STOP_LIVE)) {
@@ -201,25 +203,31 @@ public class ImagerieModule extends UserModule implements CommandHandler {
                 log("Starting imagery");
             } catch (IOException ex) {
                 ex.printStackTrace(System.err);
-                log("Unable to send start_imagery command");
+                log("Unable to send '" + label + "' command");
             }
         }
         else if (label.equals(ImageryCommands.LABELS)) {
-            if (availableLlabels == null || availableLlabels.size() == 0) {
+            if (availableLabels == null || availableLabels.size() == 0) {
                 log(label + " : no labels available");
                 return;
             }            
-            log("Available labels : " + availableLlabels.toString());
+            log("Available labels : " + availableLabels.toString());
         }
         else if (label.equals(ImageryCommands.SEND_LABELS)) {
             if (args.length < 2 ) {
                 log(ImageryCommands.SEND_LABELS + " : need at least 2 arguments : send label_1 label_2 ..");
                 return;
-            }
-            // envoyer les availableLlabels
+            }                   
             selectedLabels.clear();
             for (int i = 1; i < args.length; i++) {
                 selectedLabels.add(args[i]);
+            }                        
+            LabelSelectionPacket packet = new LabelSelectionPacket(selectedLabels);
+            try {
+                client.send(packet);
+            } catch (IOException ex) {
+                ex.printStackTrace(System.err);
+                log("Unable to send '" + label + "' command");
             }
         }
     }
