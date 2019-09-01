@@ -48,17 +48,13 @@
   		<artifactId>executable.sdk</artifactId>
   		<version>0.0.1-SNAPSHOT</version>
   	</dependency>
+        <!-- https://mvnrepository.com/artifact/org.openpnp/opencv -->
         <dependency>
-                <groupId>opencvjar</groupId>
-                <artifactId>opencvjar</artifactId>
-                <version>4.1.0</version>
+            <groupId>org.openpnp</groupId>
+            <artifactId>opencv</artifactId>
+            <version>3.4.2-1</version>
         </dependency>
-        <dependency>
-                <groupId>opencvjar</groupId>
-                <artifactId>opencvjar-runtime</artifactId>
-                <version>4.1.0</version>
-                <classifier>natives-windows-x86</classifier>
-        </dependency>
+
         
   </dependencies>
 
