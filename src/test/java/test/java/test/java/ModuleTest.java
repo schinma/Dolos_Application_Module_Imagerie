@@ -25,7 +25,7 @@ public class ModuleTest {
     
     public static void main(String[] args) {
         
-        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+        nu.pattern.OpenCV.loadLocally();
         VideoCapture capture = new VideoCapture(0);
         Mat frame = new Mat(); 
         capture.read(frame);

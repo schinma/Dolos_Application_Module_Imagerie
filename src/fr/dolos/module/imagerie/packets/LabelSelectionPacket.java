@@ -29,8 +29,7 @@ public class LabelSelectionPacket extends JsonPacket{
     }
 
     @Override
-    public void serializeData(JSONObject object) {
-        
+    public void serializeData(JSONObject object) {        
         object.put("labels", labels);
     }
 }

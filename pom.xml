@@ -54,8 +54,6 @@
             <artifactId>opencv</artifactId>
             <version>3.4.2-1</version>
         </dependency>
-
-        
   </dependencies>
 
 </project>

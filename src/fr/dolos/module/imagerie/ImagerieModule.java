@@ -60,7 +60,7 @@ public class ImagerieModule extends UserModule implements CommandHandler {
     @Override
     public boolean load(Core core) {
         this.core = core;
-               
+             
         // register the module's packet deserializers
         log("register deserializer " + LabeledFramePacket.PACKET_NAME);
         core.getNetworkManager().registerDeserializer(LabeledFramePacket.PACKET_NAME, packetDeserializers.get(LabeledFramePacket.PACKET_NAME));    
@@ -74,15 +74,19 @@ public class ImagerieModule extends UserModule implements CommandHandler {
         core.getCommandManager().registerHandler(ImageryCommands.STOP_IMAGERY.label, this);
         core.getCommandManager().registerHandler(ImageryCommands.START_LIVE.label, this);
         core.getCommandManager().registerHandler(ImageryCommands.STOP_LIVE.label, this);
-      
+        core.getCommandManager().registerHandler(ImageryCommands.LABELS.label, this);
+        core.getCommandManager().registerHandler(ImageryCommands.SEND_LABELS.label, this);
+        
         core.getNetworkManager().registerReceiver(this);
             
         return true;
     }
 
     @Override
-    public void unload() {
-        
+    public void unload() {  
+        if (client.isConnected()) {
+            client.close();
+        }
     }
     
     @Override
@@ -121,7 +125,7 @@ public class ImagerieModule extends UserModule implements CommandHandler {
         this.availableLabels = infoPacket.getLabels();
         this.client = client;
         
-        log("Available labels : " + availableLabels.toString());
+        log("Available labels from drone : " + this.availableLabels.toString());
     }
 
     private void log(String msg) {
@@ -186,42 +190,46 @@ public class ImagerieModule extends UserModule implements CommandHandler {
             try {
                 client.send(new ViewLiveControlPacket(true));
                 viewLive = true;
-                log(label + " : Starting imagery");
+                log(label + " : Starting live");
             } catch (IOException ex) {
                 ex.printStackTrace(System.err);
                 log("Unable to send '" + label + "' command");
             }
         }
-        else if (label.equals(ImageryCommands.STOP_LIVE)) {
+        else if (label.equals(ImageryCommands.STOP_LIVE.label)) {
             if (!viewLive) {
-                log(label + " : live already stopped");
+                log(label + " : video already stopped");
                 return;
             }
             try {
                 client.send(new ViewLiveControlPacket(false));
                 viewLive = false;
-                log("Starting imagery");
+                log("Sopping live");
             } catch (IOException ex) {
                 ex.printStackTrace(System.err);
                 log("Unable to send '" + label + "' command");
             }
         }
-        else if (label.equals(ImageryCommands.LABELS)) {
+        else if (label.equals(ImageryCommands.LABELS.label)) {
             if (availableLabels == null || availableLabels.size() == 0) {
                 log(label + " : no labels available");
                 return;
             }            
             log("Available labels : " + availableLabels.toString());
         }
-        else if (label.equals(ImageryCommands.SEND_LABELS)) {
+        else if (label.equals(ImageryCommands.SEND_LABELS.label)) {
             if (args.length < 2 ) {
                 log(ImageryCommands.SEND_LABELS + " : need at least 2 arguments : send label_1 label_2 ..");
                 return;
             }                   
             selectedLabels.clear();
             for (int i = 1; i < args.length; i++) {
+                if (!availableLabels.contains(args[i])) {
+                    log(args[i] + " label not available !");
+                    return;                      
+                }
                 selectedLabels.add(args[i]);
-            }                        
+            }
             LabelSelectionPacket packet = new LabelSelectionPacket(selectedLabels);
             try {
                 client.send(packet);
