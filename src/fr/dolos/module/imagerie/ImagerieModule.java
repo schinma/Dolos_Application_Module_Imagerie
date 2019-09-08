@@ -21,8 +21,9 @@ import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import javafx.scene.control.Tab;
+import javafx.scene.layout.BorderPane;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 
@@ -79,7 +80,15 @@ public class ImagerieModule extends UserModule implements CommandHandler {
         
         core.getNetworkManager().registerReceiver(this);
             
+        Tab tab = core.getUIManager().createTab(this.MODULE_NAME);
+        tab.setContent(createTabContent());
+        
         return true;
+    }
+    
+    private BorderPane createTabContent() {
+        BorderPane mainLayout = new BorderPane();        
+        return mainLayout;
     }
 
     @Override
@@ -155,60 +164,16 @@ public class ImagerieModule extends UserModule implements CommandHandler {
                 return;
         }
         if (label.equals(ImageryCommands.START_IMAGERY.label)) {
-            if (imageryStarted) {
-                log(label + " : Imagery already started");
-                return;
-            }
-            try {
-                client.send(new ControlImageryPacket(true));
-                imageryStarted = true;
-                log(label + " : Starting imagery");
-            } catch (IOException ex) {
-                ex.printStackTrace(System.err);
-                log("Unable to send '" + label + "' command");
-            }           
+            this.startImagery();
         }
         else if (label.equals(ImageryCommands.STOP_IMAGERY.label)) {
-            if (!imageryStarted) {
-                log("Imagery already stopped");
-                return;
-            }
-            try {
-                client.send(new ControlImageryPacket(false));
-                imageryStarted = false;
-                log(label + " : Stopping imagery");
-            } catch (IOException ex) {
-                ex.printStackTrace(System.err);
-                log("Unable to send '" + label + "' command");
-            }
+            this.stopImagery();
         }
         else if (label.equals(ImageryCommands.START_LIVE.label)) {
-           if (viewLive) {
-                log(label + " : Live already started");
-                return;
-            }
-            try {
-                client.send(new ViewLiveControlPacket(true));
-                viewLive = true;
-                log(label + " : Starting live");
-            } catch (IOException ex) {
-                ex.printStackTrace(System.err);
-                log("Unable to send '" + label + "' command");
-            }
+           this.startVideo();
         }
         else if (label.equals(ImageryCommands.STOP_LIVE.label)) {
-            if (!viewLive) {
-                log(label + " : video already stopped");
-                return;
-            }
-            try {
-                client.send(new ViewLiveControlPacket(false));
-                viewLive = false;
-                log("Sopping live");
-            } catch (IOException ex) {
-                ex.printStackTrace(System.err);
-                log("Unable to send '" + label + "' command");
-            }
+            this.stopVideo();
         }
         else if (label.equals(ImageryCommands.LABELS.label)) {
             if (availableLabels == null || availableLabels.size() == 0) {
@@ -230,13 +195,82 @@ public class ImagerieModule extends UserModule implements CommandHandler {
                 }
                 selectedLabels.add(args[i]);
             }
-            LabelSelectionPacket packet = new LabelSelectionPacket(selectedLabels);
+            this.sendLabels(selectedLabels);
+        }
+    }
+    
+    private void stopImagery(){
+        String label = ImageryCommands.STOP_IMAGERY.label;        
+        if (!imageryStarted) {
+                log("Imagery already stopped");
+                return;
+            }
             try {
-                client.send(packet);
+                client.send(new ControlImageryPacket(false));
+                imageryStarted = false;
+                log(label + " : Stopping imagery");
             } catch (IOException ex) {
                 ex.printStackTrace(System.err);
                 log("Unable to send '" + label + "' command");
             }
-        }
+    }
+    
+    private void startImagery(){
+        String label = ImageryCommands.START_IMAGERY.label;
+        if (imageryStarted) {
+                log(label + " : Imagery already started");
+                return;
+            }
+            try {
+                client.send(new ControlImageryPacket(true));
+                imageryStarted = true;
+                log(label + " : Starting imagery");
+            } catch (IOException ex) {
+                ex.printStackTrace(System.err);
+                log("Unable to send '" + label + "' command");
+            }           
+    }
+    
+    private void stopVideo(){
+        String label = ImageryCommands.STOP_LIVE.label;
+        if (!viewLive) {
+                log(label + " : video already stopped");
+                return;
+            }
+            try {
+                client.send(new ViewLiveControlPacket(false));
+                viewLive = false;
+                log("Sopping live");
+            } catch (IOException ex) {
+                ex.printStackTrace(System.err);
+                log("Unable to send '" + label + "' command");
+            }        
+    }
+    
+    private void startVideo(){
+        String label = ImageryCommands.START_LIVE.label;
+        if (viewLive) {
+                log(label + " : Live already started");
+                return;
+            }
+            try {
+                client.send(new ViewLiveControlPacket(true));
+                viewLive = true;
+                log(label + " : Starting live");
+            } catch (IOException ex) {
+                ex.printStackTrace(System.err);
+                log("Unable to send '" + label + "' command");
+            }
+    }
+    
+    private void sendLabels(ArrayList<String> labels) {        
+        String label = ImageryCommands.SEND_LABELS.label;
+        LabelSelectionPacket packet = new LabelSelectionPacket(selectedLabels);
+        try {
+            client.send(packet);
+        } catch (IOException ex) {
+            ex.printStackTrace(System.err);
+            log("Unable to send '" + label + "' command");
+        }       
     }
 }
