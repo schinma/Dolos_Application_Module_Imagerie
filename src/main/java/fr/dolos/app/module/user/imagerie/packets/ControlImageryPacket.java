@@ -1,7 +1,7 @@
 /*
  * Imagery Control class for Imagerie Module 
  */
-package fr.dolos.module.imagerie.packets;
+package fr.dolos.app.module.user.imagerie.packets;
 
 import fr.dolos.sdk.network.Packet;
 import fr.dolos.sdk.network.PacketDeserializer;

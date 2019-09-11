@@ -3,13 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package test.java.test.java.test.java;
+package test.java;
 
-import fr.dolos.module.imagerie.packets.ControlImageryPacket;
-import fr.dolos.module.imagerie.packets.FramePacket;
-import fr.dolos.module.imagerie.packets.ImageryInfosPacket;
-import fr.dolos.module.imagerie.packets.LabelSelectionPacket;
-import fr.dolos.module.imagerie.packets.LabeledFramePacket;
+import fr.dolos.app.module.user.imagerie.packets.*;
 import java.util.ArrayList;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
